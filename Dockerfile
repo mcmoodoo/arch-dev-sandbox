@@ -1,4 +1,5 @@
 FROM archlinux:latest AS builder
+COPY packages.list packages.list
 
 # Install system dependencies and Rust tooling
 RUN pacman -Syu --noconfirm && \
@@ -20,10 +21,6 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
         bandwhich \
         bat \
         btm \
-        cargo-cache \
-        cargo-generate \
-        cargo-modules \
-        clippy-driver \
         evcxr \
         eza \
         fd-find \

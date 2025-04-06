@@ -1,5 +1,8 @@
-build:
+build-latest:
 	podman build -t arch-dev:latest .
+
+build-tag-with-commit:
+	podman build -t arch-dev:$$(git rev-parse --short HEAD) .
 
 spin-up:
 	podman run -it -d --rm --name arch-dev --hostname arch-dev -v $$(pwd)/workspace:/workspace arch-dev
