@@ -1,6 +1,10 @@
 FROM archlinux:latest AS builder
 COPY packages.list packages.list
 
+# Build arguments for user/group mapping
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
 # Install system dependencies and Rust tooling in builder
 RUN pacman -Syu --noconfirm && \
     pacman -S --noconfirm base-devel git curl wget sudo && \
@@ -9,7 +13,8 @@ RUN pacman -Syu --noconfirm && \
     rm -rf /var/cache/pacman/pkg/* /var/lib/pacman/sync/*
 
 # Create non-root user in builder
-RUN useradd -m -u 1000 developer && \
+RUN groupadd -g $GROUP_ID developer && \
+    useradd -m -u $USER_ID -g $GROUP_ID developer && \
     echo "developer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 USER developer
@@ -37,6 +42,10 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
 FROM archlinux:latest
 COPY packages.list packages.list
 
+# Build arguments for user/group mapping
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
 # Install only runtime dependencies needed
 RUN pacman -Syu --noconfirm && \
     pacman -S --needed --noconfirm $(cat packages.list) sudo && \
@@ -46,8 +55,9 @@ RUN pacman -Syu --noconfirm && \
 # Copy user and installed tools from builder
 COPY --from=builder /home/developer /home/developer
 
-# Create user with same UID to avoid permission issues
-RUN useradd -m -u 1000 developer && \
+# Create user with same UID/GID to avoid permission issues
+RUN groupadd -g $GROUP_ID developer && \
+    useradd -m -u $USER_ID -g $GROUP_ID developer && \
     echo "developer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
     chown -R developer:developer /home/developer
 

@@ -1,5 +1,5 @@
 build-latest:
-	podman build -t arch-dev:latest .
+	podman build --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) -t arch-dev:latest .
 
 build-tag-with-commit:
 	podman build -t arch-dev:$$(git rev-parse --short HEAD) .
