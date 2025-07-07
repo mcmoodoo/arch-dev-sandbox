@@ -1,57 +1,63 @@
 FROM archlinux:latest AS builder
 COPY packages.list packages.list
 
-# Install system dependencies and Rust tooling
+# Install system dependencies and Rust tooling in builder
 RUN pacman -Syu --noconfirm && \
     pacman -S --noconfirm base-devel git curl wget sudo && \
     pacman -S --needed --noconfirm $(cat packages.list) && \
-    pacman -Sc --noconfirm  # Clean up package cache to reduce image size
+    pacman -Sc --noconfirm && \
+    rm -rf /var/cache/pacman/pkg/* /var/lib/pacman/sync/*
 
-# Create a non-root user
-RUN useradd -m developer && \
+# Create non-root user in builder
+RUN useradd -m -u 1000 developer && \
     echo "developer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 USER developer
-WORKDIR /workspace
+WORKDIR /home/developer
 
-# Install Cargo and Rust tools
+# Install Rust and cargo tools
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
-    export PATH="$HOME/.cargo/bin:$PATH" && \
+    . $HOME/.cargo/env && \
     cargo install \
-        bandwhich \
         bat \
         btm \
-        evcxr \
         eza \
         fd-find \
         gping \
-        hurl \
-        hyprsome \
         jql \
-        kalker \
         ripgrep \
-        starknet-devnet \
         tokei \
         tree-sitter-cli \
-        twiggy \
-        viu \
-        wasm-opt \
-        websocat \
         wr \
         xh \
         zellij && \
-    rm -rf $HOME/.cargo/registry $HOME/.cargo/git
+    rm -rf $HOME/.cargo/registry $HOME/.cargo/git $HOME/.rustup/tmp
 
-# Final minimal image
+# Final minimal runtime image
 FROM archlinux:latest
+COPY packages.list packages.list
+
+# Install only runtime dependencies needed
+RUN pacman -Syu --noconfirm && \
+    pacman -S --needed --noconfirm $(cat packages.list) sudo && \
+    pacman -Sc --noconfirm && \
+    rm -rf /var/cache/pacman/pkg/* /var/lib/pacman/sync/* packages.list
+
+# Copy user and installed tools from builder
 COPY --from=builder /home/developer /home/developer
-COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Recreate the non-root user
-RUN useradd -m developer && \
-    echo "developer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+# Create user with same UID to avoid permission issues
+RUN useradd -m -u 1000 developer && \
+    echo "developer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    chown -R developer:developer /home/developer
 
+# Set up environment and starship
 USER developer
 WORKDIR /workspace
+ENV PATH="/home/developer/.cargo/bin:$PATH"
+
+# Initialize starship prompt
+RUN echo 'eval "$(starship init bash)"' >> ~/.bashrc && \
+    echo 'eval "$(starship init zsh)"' >> ~/.zshrc
 
 CMD [ "/bin/bash" ]
