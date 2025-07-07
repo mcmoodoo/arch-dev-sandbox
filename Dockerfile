@@ -56,8 +56,9 @@ USER developer
 WORKDIR /workspace
 ENV PATH="/home/developer/.cargo/bin:$PATH"
 
-# Initialize starship prompt
+# Initialize starship prompt and add eza alias
 RUN echo 'eval "$(starship init bash)"' >> ~/.bashrc && \
-    echo 'eval "$(starship init zsh)"' >> ~/.zshrc
+    echo 'alias ll="eza -al"' >> ~/.bashrc && \
+    echo 'set -o vi' >> ~/.bashrc
 
 CMD [ "/bin/bash" ]
