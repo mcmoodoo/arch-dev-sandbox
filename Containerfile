@@ -63,11 +63,8 @@ RUN groupadd -g $GROUP_ID developer && \
 
 # Set up environment and starship
 USER developer
-WORKDIR /workspace
+WORKDIR /home/developer
 ENV PATH="/home/developer/.cargo/bin:$PATH"
-
-# Ensure workspace directory has proper permissions
-RUN sudo mkdir -p /workspace && sudo chown developer:developer /workspace
 
 # Initialize starship prompt and add eza alias
 RUN echo 'eval "$(starship init bash)"' >> ~/.bashrc && \

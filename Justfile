@@ -1,11 +1,16 @@
-build-latest:
-    podman build --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) -t arch-dev:latest .
+build:
+    podman build -t arch-dev:latest .
+
+run:
+    podman run --rm -itd --net=host --name arch-dev --userns=keep-id -v "$(pwd)":/home/developer/workspace:Z -w /home/developer/workspace arch-dev:latest bash
+
+connect:
+    podman exec -it arch-dev bash
+
+stop:
+    podman stop arch-dev
 
 build-tag-with-commit:
     podman build -t arch-dev:$(git rev-parse --short HEAD) .
 
-spin-up:
-    podman run -it -d --rm --name arch-dev --hostname arch-dev --network host -v $(pwd)/workspace:/workspace:Z --user $(id -u):$(id -g) arch-dev
 
-connect:
-    podman exec -it arch-dev /bin/bash
